@@ -9,7 +9,7 @@ data = ReadLines(infile)
 
 entry_try = Entry(data.predictions[1])
 
-print(entry_try.date)
-print(entry_try.time)
-print(entry_try.energy_production)
-print(entry_try.wind_speed)
+# print(entry_try.date)
+# print(entry_try.time)
+# print(entry_try.energy_production)
+# print(entry_try.wind_speed)
