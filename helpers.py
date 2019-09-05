@@ -96,10 +96,28 @@ class Model:
         return [beta_1, beta_0]
 
     def sortPreds(self, preds, by="date"):
-        """method to sort the predictions by their different properties/fields
-            INPUT: array of 'Entry' objects to be sorted. choose field to sort by:
-                ('date', 'time', 'wind_speed', 'energy_production')
+        """method to sort the predictions by date and time. option to choose field to sort by:
+                ('date', 'time', 'energy_production', 'wind_speed')
+            INPUT: array of 'Entry' objects to be sorted.
             OUTPUT: array of ordered 'Entry' objects."""
+
+        if by == "date":
+            sortedPreds = sorted(preds,
+                    key=lambda x: datetime.strptime(x.date, '%y/%m/%d'), reverse=True)
+        elif by == "time":
+            sortedPreds = sorted(preds,
+                    key=lambda x: datetime.strptime(x.time, '%H:%M'), reverse=True)
+        elif by == "energy_production":
+            sortedPreds = sorted(preds,
+                    key=lambda x: x.energy_production, reverse=True)
+        elif by == "wind_speed":
+            sortedPreds = sorted(preds,
+                    key=lambda x: x.wind_speed, reverse=True)
+        else:
+            return preds
+
+        return sortedPreds
+
 
 
 class ReadLines:
