@@ -35,6 +35,36 @@ class Entry:
             self.entry_type = "pred"
 
 
+class Model:
+    """adjust and model a list of 'Entry' objects; calculates the absolute mean error and the mean
+            cuadratic error. additionally, makes predictions for a list of prediction 'Entry' objects.
+        INPUT: List of 'Entry' objects to be modelled or to predict on
+        OUTPUT: a text file which contains the slope and intersect values in the first line, the month
+                and the 2 errors made as second line and the prediction of energy production (one per
+                prediction entry)"""
+
+    fitted_model = [0, 0]
+    observations = []   # array of observations as Entry objects
+    predict_on = []
+
+    def __init__(self, observations, predict_on):
+
+        # Fit Deming regression model
+        self.fitted_model = self.fitDeming(observations)
+
+        # Order entries to predict
+        self.predict_on_ord = self.orderPreds(predict_on, by="time")
+        self.predict_on_ord = self.orderPreds(self.predict_on_ord, by="date")
+
+        # Get predictions & errors
+        self.predicts = self.predictDeming(model=self.fitted_model, predict_on=self.predict_on_ord)
+        self.ema = self.calcEMA(observed=self.observations, predicted=self.predicts)  # Error Medio Absoluto
+        self.ecm = self.calcECM(observed=self.observations, predicted=self.predicts)  # Error Cuadratico Medio
+
+        # Write OUTPUT
+        self.write2file(fitmodel=self.fitted_model, ema=self.ema, ecm=self.ecm, predictions=self.predictss)
+
+
 class ReadLines:
     """read lines of input file and creates lists with its elements in order to create Entry objects.
         INPUT: string with date (YYYY-MM-DD), time (hh:mm), energy production
