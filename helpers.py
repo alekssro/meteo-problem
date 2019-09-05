@@ -1,5 +1,5 @@
 import datetime
-import sys
+import math
 
 infile = "Meteologica_vacante_ProgC_Problema_20190903/Meteologica_vacante_ProgC_ProblemaDatos_20190903.txt"
 
@@ -63,6 +63,43 @@ class Model:
 
         # Write OUTPUT
         self.write2file(fitmodel=self.fitted_model, ema=self.ema, ecm=self.ecm, predictions=self.predictss)
+
+    def fitDeming(self, observations, delta=1):
+        """method to fit the Deming regression model.
+            INPUT: array of 'Entry' objects corresponding to observations. option to choose delta.
+            OUTPUT: array of floats with 2 elements; [0]: slope, [1]: intersect"""
+
+        # intialize variables to calculate
+        x_sum = y_sum = s_xx = s_xy = s_yy = 0
+        N = len(observations)
+
+        # calculate estimates of x and y
+        for obs in observations:
+            x_sum += obs.wind_speed
+            y_sum += obs.energy_production
+        x_est = x_sum / N
+        y_est = y_sum / N
+
+        # calculate s values
+        for obs in observations:
+            s_xx += ((obs.wind_speed - x_est) ** 2)
+            s_xy += ((obs.wind_speed - x_est) * (obs.energy_production - y_est))
+            s_yy += ((obs.energy_production - y_est) ** 2)
+        s_xx = s_xx / (N-1)
+        s_xy = s_xy / (N-1)
+        s_yy = s_yy / (N-1)
+
+        # calculate slope (beta_0) and intersect (beta_1)
+        beta_1 = (s_yy - delta * s_xx + math.sqrt((s_yy - delta * s_xx) ** 2 + 4 * delta * (s_xy) ** 2))
+        beta_0 = y_est - beta_1 * x_est
+
+        return [beta_1, beta_0]
+
+    def sortPreds(self, preds, by="date"):
+        """method to sort the predictions by their different properties/fields
+            INPUT: array of 'Entry' objects to be sorted. choose field to sort by:
+                ('date', 'time', 'wind_speed', 'energy_production')
+            OUTPUT: array of ordered 'Entry' objects."""
 
 
 class ReadLines:
