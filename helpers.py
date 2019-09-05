@@ -12,8 +12,8 @@ class Entry:
 
     # define default variable values
     line = ""   # input string
-    date = datetime.date.today()
-    time = datetime.time(hour=0, minute=0)
+    date = datetime.datetime.today()
+    time = datetime.time()
     energy_production = None
     wind_speed = None
     list_fields = [date, time, energy_production, wind_speed]
@@ -24,14 +24,14 @@ class Entry:
         self.time = list_fields[1]
 
         if len(list_fields) == 4:
-
-            self.energy_production = list_fields[2]
-            self.wind_speed = list_fields[3]
+            # save properties of observation Entry object
+            self.energy_production = float(list_fields[2])
+            self.wind_speed = float(list_fields[3])
             self.entry_type = "obs"
 
         elif len(list_fields) == 3:
-
-            self.wind_speed = list_fields[2]
+            # save properties of prediction Entry object
+            self.wind_speed = float(list_fields[2])
             self.entry_type = "pred"
 
 
@@ -53,16 +53,17 @@ class Model:
         self.fitted_model = self.fitDeming(observations)
 
         # Order entries to predict
-        self.predict_on_ord = self.orderPreds(predict_on, by="time")
-        self.predict_on_ord = self.orderPreds(self.predict_on_ord, by="date")
+        self.predict_on_ord = self.sortPreds(predict_on, by="time")
+        self.predict_on_ord = self.sortPreds(self.predict_on_ord, by="date")
 
         # Get predictions & errors
-        self.predicts = self.predictDeming(model=self.fitted_model, predict_on=self.predict_on_ord)
+        self.predicts = self.predictDeming(fitted_model=self.fitted_model,
+                                           predict_on=self.predict_on_ord)
         self.ema = self.calcEMA(observed=self.observations, predicted=self.predicts)  # Error Medio Absoluto
         self.ecm = self.calcECM(observed=self.observations, predicted=self.predicts)  # Error Cuadratico Medio
 
         # Write OUTPUT
-        self.write2file(fitmodel=self.fitted_model, ema=self.ema, ecm=self.ecm, predictions=self.predictss)
+        self.write2file(fitmodel=self.fitted_model, ema=self.ema, ecm=self.ecm, predictions=self.predicts)
 
     def fitDeming(self, observations, delta=1):
         """method to fit the Deming regression model.
@@ -70,7 +71,11 @@ class Model:
             OUTPUT: array of floats with 2 elements; [0]: slope, [1]: intersect"""
 
         # intialize variables to calculate
-        x_sum = y_sum = s_xx = s_xy = s_yy = 0
+        x_sum = 0
+        y_sum = 0
+        s_xx = 0
+        s_xy = 0
+        s_yy = 0
         N = len(observations)
 
         # calculate estimates of x and y
@@ -85,15 +90,35 @@ class Model:
             s_xx += ((obs.wind_speed - x_est) ** 2)
             s_xy += ((obs.wind_speed - x_est) * (obs.energy_production - y_est))
             s_yy += ((obs.energy_production - y_est) ** 2)
-        s_xx = s_xx / (N-1)
-        s_xy = s_xy / (N-1)
-        s_yy = s_yy / (N-1)
+        s_xx = (s_xx / (N-1))
+        s_xy = (s_xy / (N-1))
+        s_yy = (s_yy / (N-1))
+
+        print(x_est, y_est, N, s_xx, s_xy, s_yy)
 
         # calculate slope (beta_0) and intersect (beta_1)
-        beta_1 = (s_yy - delta * s_xx + math.sqrt((s_yy - delta * s_xx) ** 2 + 4 * delta * (s_xy) ** 2))
+        beta_1 = (s_yy - delta * s_xx + math.sqrt((s_yy - delta * s_xx) ** 2 + 4 * delta * (s_xy) ** 2)) / (2 * s_xy)
         beta_0 = y_est - beta_1 * x_est
 
         return [beta_1, beta_0]
+
+    def predictDeming(self, fitted_model, predict_on):
+        """method to generate predictions for each 'Entry' prediction object using the Deming model
+            INPUT: fitted_model, array with slope and intersect as elements
+                   predict_on, array with 'Entry' objects for which predictions will be made
+            OUTPUT: array of floats with predicted energy production values for each entry"""
+
+        predicted = []
+
+        for pred in predict_on:
+            p = fitted_model[0] * pred.wind_speed + fitted_model[1]
+            # if a prediction is negative, substitute by 0 (not possible to produce negative energy)
+            if p < 0:
+                p = 0
+
+            predicted.append(p)
+
+        return predicted
 
     def sortPreds(self, preds, by="date"):
         """method to sort the predictions by date and time. option to choose field to sort by:
@@ -103,21 +128,23 @@ class Model:
 
         if by == "date":
             sortedPreds = sorted(preds,
-                    key=lambda x: datetime.strptime(x.date, '%y/%m/%d'), reverse=True)
+                    key=lambda x: datetime.datetime.strptime(x.date, '%Y-%m-%d'), reverse=False)
         elif by == "time":
             sortedPreds = sorted(preds,
-                    key=lambda x: datetime.strptime(x.time, '%H:%M'), reverse=True)
+                    key=lambda x: datetime.datetime.strptime(x.time, '%H:%M'), reverse=False)
         elif by == "energy_production":
             sortedPreds = sorted(preds,
-                    key=lambda x: x.energy_production, reverse=True)
+                    key=lambda x: x.energy_production, reverse=False)
         elif by == "wind_speed":
             sortedPreds = sorted(preds,
-                    key=lambda x: x.wind_speed, reverse=True)
+                    key=lambda x: x.wind_speed, reverse=False)
         else:
             return preds
 
         return sortedPreds
 
+    def write2file(self, fitmodel, ema, ecm, predictions):
+        pass
 
 
 class ReadLines:
