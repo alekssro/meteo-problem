@@ -6,9 +6,10 @@ from helpers import Model
 
 infile = "data/Meteologica_vacante_ProgC_ProblemaDatos_20190903.txt"
 
+# Read file into array of arrays (lines x <words)
 data = ReadLines(infile)
 
-# Transform arrays to 'Entry' objects
+# Transform array to arrays of 'Entry' objects
 observations = []
 predictions = []
 for obs in data.observations:
@@ -17,46 +18,37 @@ for pred in data.predictions:
     predictions.append(Entry(pred))
 
 # Fit Deming model and predict on predictions from input file
-meteo_model = Model(observations, observations)
-print(meteo_model.slope, meteo_model.intersect)
-
-# Get prediction results
-res_predictions = meteo_model.predict_on
-for i in range(len(res_predictions)):
-    print(res_predictions[i].date_time, meteo_model.y_observed[i],
-          res_predictions[i].energy_production, res_predictions[i].wind_speed)
-
-# Compare observed energy production values with predictions obtained on the same data, using the model
-energy_production_observed = meteo_model.y_observed
-wind_speed_observed = meteo_model.x_observed
-energy_production_predicted = meteo_model.predictDeming(fitted_model=meteo_model.fitted_model,
-                                                        x=wind_speed_observed)
+meteo_model = Model(observations, predictions)
+print(format(meteo_model.slope, '.2f'), format(meteo_model.intersect, '.2f'))
 
 # Calculate EMA and ECM errors by month on observations
-# Filter observation Entry objects by month
-months = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"]
+# Group observation Entry objects by month and save to dictionary
+months = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"]
+entries_by_month = {}
+entries_by_month.update(dict.fromkeys(months, []))      # initialize dictionary with months as keys
+for entry in meteo_model.observations:
+    month = str(entry.date_time.month)
+    entries_by_month[month] = entries_by_month[month] + [entry]
+
+# Predict on observations by month and calculate EMA and ECM errors
 for month in months:
-    for entry in observations:
-        if int(month) == entry.date_time.month:
-            print("hello")
-temp = meteo_model.groupByMonth(x=observations)
 
-# Calculate EMA and ECM errors
-ema = meteo_model.calcEMA(observed=energy_production_observed, predicted=energy_production_predicted)
-ecm = meteo_model.calcECM(observed=energy_production_observed, predicted=energy_production_predicted)
-print(ema, ecm)
+    # Get array with wind_speed values (X) and energy_production values (Y) (by month)
+    wind_speed_observed = [obs.wind_speed for obs in entries_by_month[month]]
+    energy_production_observed = [obs.energy_production for obs in entries_by_month[month]]
 
+    # Predict energy production using the model
+    energy_production_predicted = meteo_model.predictDeming(fitted_model=meteo_model.fitted_model,
+                                                            x=wind_speed_observed)
 
-# for i in range(len(ep_observed)):
-#     print([i], ep_predicted[i])
+    # Calculate EMA and ECM errors
+    ema = meteo_model.calcEMA(observed=energy_production_observed, predicted=energy_production_predicted)
+    ecm = meteo_model.calcECM(observed=energy_production_observed, predicted=energy_production_predicted)
 
-# print(type(meteo_model.observations[0]), type(meteo_model.predict_on[0]))
-# print(len(meteo_model.ep_observed), len(meteo_model.ep_predicted))
-# print(meteo_model.ep_predicted)
-# print(meteo_model.calcEMA(meteo_model.ep_observed, meteo_model.ep_predicted))
+    print("Mes " + month, format(ema, '.2f'), format(ecm, '.2f'))
 
-# print(m.predicts)
-# for pred in m.predict_on_ord:
-#     print(pred.date, pred.time, pred.energy_production, pred.wind_speed)
-
-# OUTPUT
+# Print prediction results
+res_predictions = meteo_model.predict_on
+for i in range(len(res_predictions)):
+    print(res_predictions[i].date_time.strftime('%Y-%m-%d %H:%M'),
+          format(res_predictions[i].energy_production, '.0f'))
