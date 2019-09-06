@@ -1,9 +1,6 @@
 import datetime
 import math
 
-infile = "Meteologica_vacante_ProgC_Problema_20190903/Meteologica_vacante_ProgC_ProblemaDatos_20190903.txt"
-
-
 class Entry:
     """store observation or prediction object with properties: date, energy production, wind speed.
         INPUT: string with date (YYYY-MM-DD), time (hh:mm), energy production
@@ -59,11 +56,60 @@ class Model:
         # Get predictions & errors
         self.predicts = self.predictDeming(fitted_model=self.fitted_model,
                                            predict_on=self.predict_on_ord)
+
         self.ema = self.calcEMA(observed=self.observations, predicted=self.predicts)  # Error Medio Absoluto
         self.ecm = self.calcECM(observed=self.observations, predicted=self.predicts)  # Error Cuadratico Medio
 
         # Write OUTPUT
         self.write2file(fitmodel=self.fitted_model, ema=self.ema, ecm=self.ecm, predictions=self.predicts)
+
+    def calcEMA(self, observed, predicted):
+        """method to calculate Mean Absolute Error (método para calcular Error Medio Absoluto)
+            Re-implemented in python from ema.hpp source code file.
+           INPUT: array of 'Entry' objects corresponding to observations and other array corresponding
+                  to predictions
+           OUTPUT: (float) percentage MAE/EMA"""
+
+        error_acumulado = 0
+        observacion_total = 0
+
+        # observations and predictions should be same lenght
+        if len(observed) != len(predicted):
+            return 100
+
+        for i in range(len(observed)):
+            error_acumulado += abs(observed[i] - predicted[i])
+            observacion_total += observed[i]
+
+        if observacion_total < 1e-7:
+            return 0
+
+        ema = (error_acumulado / observacion_total) * 100
+
+        return ema
+
+    def calcECM(self, observed, predicted):
+        """method to calculate Mean Cuadratic Error (método para calcular Error Cuadratico Medio)
+           INPUT: array of 'Entry' objects corresponding to observations and other array corresponding
+                  to predictions
+           OUTPUT: (float) percentage MCE/ECM"""
+        error_cuadratico = 0
+        observacion_total = 0
+
+        # observations and predictions should be same lenght
+        if len(observed) != len(predicted):
+            return 100
+
+        for i in range(len(observed)):
+            error_cuadratico += ((observed[i] - predicted[i]) ** 2)
+            observacion_total += observed[i]
+
+        if observacion_total < 1e-7:
+            return 0
+
+        ecm = (math.sqrt(error_cuadratico/len(observed)) / observacion_total) * 100 * len(observed)
+
+        return ecm
 
     def fitDeming(self, observations, delta=1):
         """method to fit the Deming regression model.
