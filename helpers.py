@@ -205,7 +205,8 @@ class Model:
 
         if by == "date_time":
             sortedPreds = sorted(preds,
-                    key=lambda x: datetime.datetime.strptime(str(x.date_time), '%Y-%m-%d %H:%M'), reverse=False)
+                    key=lambda x: x.date_time.strftime('%Y-%m-%d %H:%M'), reverse=False)
+        # datetime.datetime.strptime(str(x.date_time), '%Y-%m-%d %H:%M'), reverse=False)
         elif by == "energy_production":
             sortedPreds = sorted(preds,
                     key=lambda x: x.energy_production, reverse=False)
