@@ -4,7 +4,7 @@ from helpers import ReadLines
 from helpers import Entry
 from helpers import Model
 
-infile = "Meteologica_vacante_ProgC_Problema_20190903/Meteologica_vacante_ProgC_ProblemaDatos_20190903.txt"
+infile = "data/Meteologica_vacante_ProgC_Problema_20190903/Meteologica_vacante_ProgC_ProblemaDatos_20190903.txt"
 
 data = ReadLines(infile)
 
