@@ -2,7 +2,6 @@
 #define EMA_HPP_
 
 #include <cmath>
-#include <boost/python.hpp>
 
 /**
  * Calcula el error medio absoluto en porcentaje entre una colección de observaciones y de predicciones.
@@ -31,9 +30,3 @@ double ema(forward_iterator_observaciones observaciones,
 }
 
 #endif /* EMA_HPP_ */
-
-BOOST_PYTHON_MODULE(EMA_c)
-{
-    using namespace boost::python;
-    def("ema", ema);
-}
