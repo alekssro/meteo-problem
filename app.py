@@ -45,7 +45,7 @@ for month in months:
     ema = meteo_model.calcEMA(observed=energy_production_observed, predicted=energy_production_predicted)
     ecm = meteo_model.calcECM(observed=energy_production_observed, predicted=energy_production_predicted)
 
-    print("Mes " + month, format(ema, '.2f'), format(ecm, '.2f'))
+    print("Mes" + month, format(ema, '.2f'), format(ecm, '.2f'))
 
 # Print prediction results
 res_predictions = meteo_model.predict_on
