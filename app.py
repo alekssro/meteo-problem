@@ -29,7 +29,7 @@ for entry in meteo_model.observations:
     month = str(entry.date_time.month)
     entries_by_month[month] = entries_by_month[month] + [entry]
 
-# Get output
+# Get output only if called directly
 if __name__ == "__main__":
     
     # Print model slope and intersect, in that order
