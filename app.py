@@ -4,7 +4,7 @@ from helpers import ReadLines
 from helpers import Entry
 from helpers import Model
 
-infile = "data/Meteologica_vacante_ProgC_ProblemaDatos_20190903.txt"
+infile = "data/input_data.txt"
 
 # Read file into array of arrays (lines x <words)
 data = ReadLines(infile)
